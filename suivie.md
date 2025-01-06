@@ -1,6 +1,5 @@
-# Installation du docker's
+## Installation du docker's
 
-# Add Docker's official GPG key:
 ``` powershell
 sudo apt-get update
 sudo apt-get install ca-certificates curl
@@ -10,7 +9,7 @@ sudo chmod a+r /etc/apt/keyrings/docker.asc
 ```
 
 
-# Add the repository to Apt sources:
+## modification docker:
 ``` powershell 
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
@@ -24,11 +23,11 @@ sudo systemctl enable docker
 sudo usermod -aG docker ubuntu
 ```
 
-# Installation de prometheus 
+## Installation de prometheus 
 
 ```powershell
 mkdir /etc/prometheus
-vim prometheus.yml
+nano prometheus.yml
 ```
 
 ## Script 
@@ -92,3 +91,81 @@ cd node_exporter-1.8.2.linux-amd64.tar.gz
 ./node_exporter
 ``` 
 
+On peut acceder au Node Exporter sur le web :
+
+http://192.168.56.108:9100/metrics
+
+## Modification du script prometheus
+
+cd /etc/prometheus
+nano prometheus.yml
+
+- job_name: 'node-exporter'
+    static_configs:
+    - targets: ['<node-ip>:9100']
+
+# Redemarre prometheus et on vérifie qu'il capte bien. 
+
+Status > Targets
+
+### Setup les alertes
+
+```powershell
+wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.28.0-rc.0.linux-amd64.tar.gz
+
+tar -xvf alertmanager-0.28.0-rc.0.linux-amd64.tar.
+
+cd alertmanager-0.28.0-rc.0.linux-amd64
+
+./alertmanager
+
+```
+
+### Configuration d'AlertManager en tant que service sur une machine Linux :
+
+modification du fichier 
+
+```powershell
+sudo mkdir /var/lib/alertmanager
+sudo mv alertmanager-0.27.0.linux-amd64/* /var/lib/alertmanager
+```
+
+```powershell
+cd /var/lib/alertmanager
+```
+
+modification des droits 
+
+```powershell
+sudo chown -R prometheus:prometheus /var/lib/alertmanager
+sudo chown -R prometheus:prometheus /var/lib/alertmanager/*
+sudo chmod -R 775 /var/lib/alertmanager
+sudo chmod -R 775 /var/lib/alertmanager/*
+```
+
+sudo vi /etc/systemd/system/alertmanager.service
+
+```
+# Add the below content to the file
+[Unit]
+Description=Prometheus Alertmanager
+Documentation=https://prometheus.io/docs/introduction/overview/
+Wants=network-online.target
+After=network-online.target
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStart=/var/lib/alertmanager/alertmanager --storage.path="/var/lib/alertmanager/data" --config.file="/var/lib/alertmanager/alertmanager.yml"
+SyslogIdentifier=prometheus_alert_manager
+Restart=always
+[Install]
+WantedBy=multi-user.target
+```
+
+``` 
+systemctl daemon-reload
+systemctl stop alertmanager 
+systemctl start alertmanager 
+systemctl enable alertmanager 
