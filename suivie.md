@@ -1,13 +1,17 @@
-#Installation du docker's
+# Installation du docker's
 
 # Add Docker's official GPG key:
+``` powershell
 sudo apt-get update
 sudo apt-get install ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
+```
+
 
 # Add the repository to Apt sources:
+``` powershell 
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
@@ -18,14 +22,18 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 
 sudo systemctl enable docker
 sudo usermod -aG docker ubuntu
+```
 
-#installation de prometheus 
+# Installation de prometheus 
 
+```powershell
 mkdir /etc/prometheus
 vim prometheus.yml
+```
 
-##Programation 
+## Script 
 
+```powershell
 # my global config
 global:
   scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
@@ -55,18 +63,32 @@ scrape_configs:
 
     static_configs:
       - targets: ["localhost:9090"]
+```
 
-#run prometheus
-
+# Run prometheus
+```powershell
 docker run -d --name=prometheus -e TZ=IST -v /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml -p 9090:9090 
+```
 
 #ecrire ce qu'on a modifier sur le site
 
-# run grafana
-
+# Run grafana
+```powershell
 docker run -d - name=grafana -p 3000:3000 grafana/grafana
-
-#pour ouvrire sur le site web 
+```
+# Pour ouvrire sur le site web 
 
 http://192.168.56.108:3000
+
+# Install Node Exporter
+
+```powershell
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.1/node_exporter-1.8.2.linux-amd64.tar.gz
+
+tar xvf node_exporter-1.8.2.linux-amd64.tar.gz
+
+cd node_exporter-1.8.2.linux-amd64.tar.gz
+
+./node_exporter
+``` 
 
