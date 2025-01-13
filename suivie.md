@@ -298,6 +298,7 @@ receivers:
       auth_identity: "linuxmonitoring2@gmail.com"
       auth_password: "dcqj cskq amtx zmih "
 ```
+> #### L'```auth_password``` est obtenu par google grace aux mot de passe pour application : On a crée pour l'application ```Alertmanager``` un mot de passe et on l'utilise pour l'envoie de mail.
 
 ### modification des mails pour accepter les modification venant d'application
 
