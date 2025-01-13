@@ -326,27 +326,24 @@ scrip :
 #!/bin/bash
 
 while true; do
+  # Récupérer l'utilisation du CPU
   CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
+
+  # Récupérer l'utilisation de la mémoire
   MEM_USAGE=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
+
+  # Récupérer l'utilisation du disque
   DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
 
-  cat <<EOF | nc -l -p 9200 -q 1
-HTTP/1.1 200 OK
-Content-Type: text/plain
+  # Afficher les métriques
+  echo "CPU Usage: $CPU_USAGE%"
+  echo "Memory Usage: $MEM_USAGE%"
+  echo "Disk Usage: $DISK_USAGE%"
 
-# HELP system_cpu_usage CPU usage percentage.
-# TYPE system_cpu_usage gauge
-system_cpu_usage $CPU_USAGE
-
-# HELP system_memory_usage Memory usage percentage.
-# TYPE system_memory_usage gauge
-system_memory_usage $MEM_USAGE
-
-# HELP system_disk_usage Disk usage percentage.
-# TYPE system_disk_usage gauge
-system_disk_usage $DISK_USAGE
-EOF
+  # Pause avant la prochaine itération
+  sleep 5
 done
+
 
 ```
 
@@ -374,33 +371,33 @@ script :
 ```bash
 #!/bin/bash
 
+LOG_FILE="/var/log/network_metrics.log"  # Fichier pour enregistrer les métriques
+
 while true; do
+  # Récupérer les statistiques réseau
   RX_PREV=$(cat /sys/class/net/enp0s8/statistics/rx_bytes)
   TX_PREV=$(cat /sys/class/net/enp0s8/statistics/tx_bytes)
+  
   sleep 1
+  
   RX_NEXT=$(cat /sys/class/net/enp0s8/statistics/rx_bytes)
   TX_NEXT=$(cat /sys/class/net/enp0s8/statistics/tx_bytes)
 
+  # Calculer le taux de réception et d'émission en KB/s
   RX_RATE=$((($RX_NEXT - $RX_PREV) / 1024))
   TX_RATE=$((($TX_NEXT - $TX_PREV) / 1024))
+  
+  # Calculer la latence du réseau en pingant google.com
   LATENCY=$(ping -c 1 google.com | grep 'time=' | awk -F'time=' '{print $2}' | awk '{print $1}')
+  
+  # Enregistrer les métriques dans un fichier log
+  echo "$(date) - network_latency=$LATENCY network_rx_rate=$RX_RATE network_tx_rate=$TX_RATE" >> $LOG_FILE
 
-  cat <<EOF | nc -l -p 9201 -q 1
-HTTP/1.1 200 OK
-Content-Type: text/plain
-
-# HELP network_latency Latency to google.com in ms.
-# TYPE network_latency gauge
-network_latency ${LATENCY:-0}
-
-# HELP network_rx_rate Receive rate in KB/s.
-# TYPE network_rx_rate gauge
-network_rx_rate $RX_RATE
-
-# HELP network_tx_rate Transmit rate in KB/s.
-# TYPE network_tx_rate gauge
-network_tx_rate $TX_RATE
-EOF
+  # Afficher les métriques dans la console (optionnel)
+  echo "network_latency=$LATENCY network_rx_rate=$RX_RATE network_tx_rate=$TX_RATE"
+  
+  # Attendre avant de mesurer à nouveau
+  sleep 5
 done
 
 ```
