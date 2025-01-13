@@ -64,16 +64,18 @@ scrape_configs:
       - targets: ["localhost:9090"]
 ```
 
-# Run prometheus
+## Run prometheus
 ```powershell
 docker run -d --name=prometheus -e TZ=IST -v /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml -p 9090:9090 
 ```
 
-# Run grafana
+## Run grafana
 ```powershell
 docker run -d - name=grafana -p 3000:3000 grafana/grafana
 ```
-# Pour ouvrire sur le site web 
+
+
+## Pour ouvrire sur le site web 
 
 http://192.168.56.109:3000
 
@@ -294,7 +296,7 @@ receivers:
       smarthorst: "smtp.gmail.com:465"
       auth_username: "linuxmonitoring2@gmail.com"
       auth_identity: "linuxmonitoring2@gmail.com"
-      auth_password: "monitoring_test17"
+      auth_password: "dcqj cskq amtx zmih "
 ```
 
 ### modification des mails pour accepter les modification venant d'application
