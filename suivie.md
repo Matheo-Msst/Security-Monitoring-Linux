@@ -325,31 +325,29 @@ scrip :
 ```bash
 #!/bin/bash
 
-# Chemin du fichier log
-LOG_FILE="/var/log/system_monitor.log"
-
-# Fonction pour surveiller l'utilisation du CPU
-monitor_cpu() {
+while true; do
   CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
-  echo "$(date): CPU Usage: $CPU_USAGE%" >> $LOG_FILE
-}
-
-# Fonction pour surveiller l'utilisation de la mémoire
-monitor_memory() {
   MEM_USAGE=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
-  echo "$(date): Memory Usage: $MEM_USAGE%" >> $LOG_FILE
-}
+  DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
 
-# Fonction pour surveiller l'utilisation de l'espace disque
-monitor_disk() {
-  DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}')
-  echo "$(date): Disk Usage: $DISK_USAGE" >> $LOG_FILE
-}
+  cat <<EOF | nc -l -p 9200 -q 1
+HTTP/1.1 200 OK
+Content-Type: text/plain
 
-# Appel des fonctions
-monitor_cpu
-monitor_memory
-monitor_disk
+# HELP system_cpu_usage CPU usage percentage.
+# TYPE system_cpu_usage gauge
+system_cpu_usage $CPU_USAGE
+
+# HELP system_memory_usage Memory usage percentage.
+# TYPE system_memory_usage gauge
+system_memory_usage $MEM_USAGE
+
+# HELP system_disk_usage Disk usage percentage.
+# TYPE system_disk_usage gauge
+system_disk_usage $DISK_USAGE
+EOF
+done
+
 ```
 
 ```powershell
@@ -376,21 +374,7 @@ script :
 ```bash
 #!/bin/bash
 
-# Chemin du fichier log
-LOG_FILE="/var/log/network_monitor.log"
-
-# Fonction pour vérifier la latence
-monitor_latency() {
-  LATENCY=$(ping -c 1 google.com | grep 'time=' | awk -F'time=' '{print $2}' | awk '{print $1}')
-  if [ -z "$LATENCY" ]; then
-    echo "$(date): Latency: Unreachable" >> $LOG_FILE
-  else
-    echo "$(date): Latency: $LATENCY ms" >> $LOG_FILE
-  fi
-}
-
-# Fonction pour surveiller l'utilisation du réseau
-monitor_bandwidth() {
+while true; do
   RX_PREV=$(cat /sys/class/net/enp0s8/statistics/rx_bytes)
   TX_PREV=$(cat /sys/class/net/enp0s8/statistics/tx_bytes)
   sleep 1
@@ -399,13 +383,26 @@ monitor_bandwidth() {
 
   RX_RATE=$((($RX_NEXT - $RX_PREV) / 1024))
   TX_RATE=$((($TX_NEXT - $TX_PREV) / 1024))
+  LATENCY=$(ping -c 1 google.com | grep 'time=' | awk -F'time=' '{print $2}' | awk '{print $1}')
 
-  echo "$(date): RX Rate: ${RX_RATE} KB/s, TX Rate: ${TX_RATE} KB/s" >> $LOG_FILE
-}
+  cat <<EOF | nc -l -p 9201 -q 1
+HTTP/1.1 200 OK
+Content-Type: text/plain
 
-# Appel des fonctions
-monitor_latency
-monitor_bandwidth
+# HELP network_latency Latency to google.com in ms.
+# TYPE network_latency gauge
+network_latency ${LATENCY:-0}
+
+# HELP network_rx_rate Receive rate in KB/s.
+# TYPE network_rx_rate gauge
+network_rx_rate $RX_RATE
+
+# HELP network_tx_rate Transmit rate in KB/s.
+# TYPE network_tx_rate gauge
+network_tx_rate $TX_RATE
+EOF
+done
+
 ```
 
 ```powershell 
