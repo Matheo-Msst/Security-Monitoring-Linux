@@ -421,3 +421,9 @@ crontab -e
 */5 * * * * /usr/local/bin/monitor_reseaux
 ```
 
+Pour lire les scrips 
+
+```powershell
+ tail -f /var/log/system_monitor.log
+ tail -f /var/log/network_monitor.log
+```
