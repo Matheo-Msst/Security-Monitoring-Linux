@@ -302,6 +302,122 @@ receivers:
 
 ### modification des mails pour accepter les modification venant d'application
 
+# Création de scripts de surveillance
+- Surveiller les ressources systèmes 
+- Surveillance réseaux
 
+## - Surveiller les ressources systèmes
 
+ Création d'un dossier ou stocker les données
+
+```powershell
+sudo touch /var/log/network_monitor.log /var/log/system_monitor.log
+sudo chmod 666 /var/log/network_monitor.log /var/log/system_monitor.log
+```
+
+### création du fichier 
+
+```powershell
+sudo nano  monitor_systemes /usr/local/bin/
+```
+
+scrip :
+```bash
+#!/bin/bash
+
+# Chemin du fichier log
+LOG_FILE="/var/log/system_monitor.log"
+
+# Fonction pour surveiller l'utilisation du CPU
+monitor_cpu() {
+  CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
+  echo "$(date): CPU Usage: $CPU_USAGE%" >> $LOG_FILE
+}
+
+# Fonction pour surveiller l'utilisation de la mémoire
+monitor_memory() {
+  MEM_USAGE=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
+  echo "$(date): Memory Usage: $MEM_USAGE%" >> $LOG_FILE
+}
+
+# Fonction pour surveiller l'utilisation de l'espace disque
+monitor_disk() {
+  DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}')
+  echo "$(date): Disk Usage: $DISK_USAGE" >> $LOG_FILE
+}
+
+# Appel des fonctions
+monitor_cpu
+monitor_memory
+monitor_disk
+```
+
+```powershell
+sudo chmod +x /usr/local/bin/monitor_systemes
+```
+
+```powershell
+crontab -e
+```
+on choisi 1 pour nano
+
+script :
+```
+*/5 * * * * /usr/local/bin/monitor_systemes
+```
+
+## Surveiller le reseaux
+
+```powershell
+/usr/local/bin$ sudo nano monitor_reseaux
+```
+
+script : 
+```bash
+#!/bin/bash
+
+# Chemin du fichier log
+LOG_FILE="/var/log/network_monitor.log"
+
+# Fonction pour vérifier la latence
+monitor_latency() {
+  LATENCY=$(ping -c 1 google.com | grep 'time=' | awk -F'time=' '{print $2}' | awk '{print $1}')
+  if [ -z "$LATENCY" ]; then
+    echo "$(date): Latency: Unreachable" >> $LOG_FILE
+  else
+    echo "$(date): Latency: $LATENCY ms" >> $LOG_FILE
+  fi
+}
+
+# Fonction pour surveiller l'utilisation du réseau
+monitor_bandwidth() {
+  RX_PREV=$(cat /sys/class/net/enp0s8/statistics/rx_bytes)
+  TX_PREV=$(cat /sys/class/net/enp0s8/statistics/tx_bytes)
+  sleep 1
+  RX_NEXT=$(cat /sys/class/net/enp0s8/statistics/rx_bytes)
+  TX_NEXT=$(cat /sys/class/net/enp0s8/statistics/tx_bytes)
+
+  RX_RATE=$((($RX_NEXT - $RX_PREV) / 1024))
+  TX_RATE=$((($TX_NEXT - $TX_PREV) / 1024))
+
+  echo "$(date): RX Rate: ${RX_RATE} KB/s, TX Rate: ${TX_RATE} KB/s" >> $LOG_FILE
+}
+
+# Appel des fonctions
+monitor_latency
+monitor_bandwidth
+```
+
+```powershell 
+sudo chmod +x /usr/local/bin/monitor_reseaux
+```
+
+On viens rajouter le nouveau script dans le cron
+```
+crontab -e
+```
+
+```powershell
+*/5 * * * * /usr/local/bin/monitor_reseaux
+```
 
