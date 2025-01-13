@@ -108,90 +108,6 @@ nano prometheus.yml
 
 Status > Targets
 
-### Setup les alertes
-
-```powershell
-wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.28.0-rc.0.linux-amd64.tar.gz
-
-tar -xvf alertmanager-0.28.0-rc.0.linux-amd64.tar.
-
-cd alertmanager-0.28.0-rc.0.linux-amd64
-
-./alertmanager
-
-```
-
-### Configuration d'AlertManager en tant que service sur une machine Linux :
-
-modification du fichier 
-
-```powershell
-sudo mkdir /var/lib/alertmanager
-sudo mv alertmanager-0.27.0.linux-amd64/* /var/lib/alertmanager
-```
-
-```powershell
-cd /var/lib/alertmanager
-```
-
-modification des droits 
-
-```powershell
-sudo chown -R prometheus:prometheus /var/lib/alertmanager
-sudo chown -R prometheus:prometheus /var/lib/alertmanager/*
-sudo chmod -R 775 /var/lib/alertmanager
-sudo chmod -R 775 /var/lib/alertmanager/*
-```
-
-sudo nano /etc/systemd/system/alertmanager.service
-
-```
-# Add the below content to the file
-[Unit]
-Description=Prometheus Alertmanager
-Documentation=https://prometheus.io/docs/introduction/overview/
-Wants=network-online.target
-After=network-online.target
-[Service]
-Type=simple
-User=prometheus
-Group=prometheus
-ExecReload=/bin/kill -HUP $MAINPID
-ExecStart=/var/lib/alertmanager/alertmanager --storage.path="/var/lib/alertmanager/data" --config.file="/var/lib/alertmanager/alertmanager.yml"
-SyslogIdentifier=prometheus_alert_manager
-Restart=always
-[Install]
-WantedBy=multi-user.target
-```
-
-``` 
-systemctl daemon-reload
-systemctl start alertmanager 
-systemctl enable alertmanager 
-systemctl status alertmanager 
-```
-On peut accéder au site web avec 
-
-"http://192.168.56.108:9093"
-
-## Configurer les alertes
-
-```
-sudo mkdir /etc/prometheus/rules
-chown -R prometheus:prometheus /etc/prometheus
-sudo nano /etc/prometheus/rules/alert.yaml
-```
-Modification du fichier alert.yaml
-```bash
-- alert: PrometheusTargetMissing
-    expr: up == 0
-    for: 0m
-    labels:
-      severity: critical
-    annotations:
-      summary: Prometheus target missing (instance {{ $labels.instance }})
-      description: "A Prometheus target has disappeared. An exporter might be crashed.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-```
 
 # Modification du fichier 
 
@@ -219,44 +135,11 @@ scrape_configs:
 sudo systemctl restart prometheus
 ```
 
-# MAJ alertmanager.yml
-
-```
-sudo nano /var/lib/alertmanager/alertmanager.yml
-```
-
-```
-global:
-  slack_api_url: 'https://hooks.slack.com/services/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'
-route:
-  # The below receiver is a Default receiver. If the alert doesn't match any of the receivers in routes section, It will send the alert to the default receiver.
-  receiver: 'slack-notifications'
-  # To send alerts to different receivers based on different conditions, We can use the "routes" section.
-  # routes:
-  #   - match:
-  #       severity: critical
-  #     receiver: 'slack-notifications'
-  #   - match:
-  #       severity: warning
-  #     receiver: 'slack-notifications'
-  
-receivers:
-  - name: 'slack-notifications'
-    slack_configs:
-      - send_resolved: true
-        channel: '#channel_name'
-        icon_emjoi: ':warning:'
-```
-```
-sudo systemctl restart alertmanager
-```
-
-
 ## Configuration alerte envoyer par mail 
 
 ```powershell
  mkdir /etc/prometheus/rules
- chown -R prometheus:prometheus /etc/prometheus
+  
  nano /etc/prometheus/prometheus.yml
 ```
 ### modification du fichier /prometheus/prometheus.yml
@@ -290,10 +173,9 @@ scrape_configs:
 
 ### création / modification du fichier alerts.yml
 
-```
+``` powershell
 nano /etc/prometheus/rules/alerts.yml
 ```
-
 
 ```powershell
  GNU nano 7.2  /etc/prometheus/rules/alerts.yml            groups:
@@ -323,9 +205,52 @@ systemctl restart prometheus
 ```
 ### On extrait les documents
 
+```powershell
+tar -xvzf alertmanager-0.28.0-rc.0.linux-amd64.tar.gz -C /etc/
+mv alertmanager-0.28.0-rc.0.linux-amd64/* /etc/alertmanager/
 ```
-tar -xvzf /etc/alertmanager-0.28.0-rc.0.linux-amd64.tar.gz -C /etc/
+
+### Modification des droits 
+
+```powershell
+sudo chown -R prometheus:prometheus /var/lib/alertmanager
+sudo chown -R prometheus:prometheus /var/lib/alertmanager/*
+sudo chmod -R 775 /var/lib/alertmanager
+sudo chmod -R 775 /var/lib/alertmanager/*
 ```
+
+```powershell
+ nano /etc/systemd/system/alertmanager.service
+```
+
+``` powershell
+# Add the below content to the file
+[Unit]
+Description=Prometheus Alertmanager
+Documentation=https://prometheus.io/docs/introduction/overview/
+Wants=network-online.target
+After=network-online.target
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStart=/var/lib/alertmanager/alertmanager --storage.path="/var/lib/alertmanager/data" --config.file="/var/lib/alertmanager/alertmanager.yml"
+SyslogIdentifier=prometheus_alert_manager
+Restart=always
+[Install]
+WantedBy=multi-user.target
+```
+
+``` powershell
+systemctl daemon-reload
+systemctl start alertmanager 
+systemctl enable alertmanager 
+systemctl status alertmanager 
+```
+### On peut accéder au site web avec 
+
+"http://192.168.56.108:9093"
 
 ### modification du fichier alertmanager.yml
 
@@ -356,7 +281,6 @@ receivers:
       auth_identity: "linuxmonitoring2@gmail.com"
       auth_password: "monitoring_test17"
 ```
-
 
 ### modification des mails pour accepter les modification venant d'application
 
